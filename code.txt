@@ -1,0 +1,306 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Javascript from validation </title>
+
+<style>
+    body{
+        
+        padding: 10px 50px;
+       }
+       .formdesign
+       {
+        
+        font-size: larger;
+       }
+       .formdesign input
+       {
+        width: 50%;
+        padding: 10px 15px;
+        border: 3px solid chocolate;
+        border-radius: 10px ;
+        font-size: larger;
+       }
+       .formerror
+       {
+        color: red;
+        font-size: larger;
+       }
+       .but
+       {
+        border-radius: 20px;
+        width: 80px;
+        height: 50px;
+        font-size: large;
+        background-color: black;
+        color: aqua;
+       }
+</style>
+
+
+</head>
+<body>
+    <h1>Welcome </h1>
+    <form action="/myaction.php" name="myForm" onsubmit="return validateForm()" method="post">
+        <div class="formdesign" id="name">
+       Name : <input type="text" name="fname" required> <b><span class="formerror"> </span></b>
+       </div>
+       <br>
+       <div class="formdesign" id="email">
+        Email : <input type="email" name="femail"> <b><span class="formerror"> </span></b>
+        </div>
+        <br>
+        <div class="formdesign" id="phone">
+        Phone : <input type="number" name="fphone"> <b><span class="formerror"> </span></b>
+        </div>
+          <br>
+        <div class="formdesign" id="pass">
+        Password : <input type="password" name="fpass"><b> <span class="formerror"></span></b>
+        </div>
+        <br>
+
+        <div class="formdesign" id="cpass">
+         Confirm Password : <input type="password" name="fcpass"> <span class="formerror"> </span>
+            </div>
+            <br>
+
+          <input class="but" type="submit" value="Submit">   
+             
+    </form>
+</body>
+<script>
+    function seterror(id, error)
+    {
+     element=document.getElementById(id);
+     element.getElementsByClassName('formerror')[0].innerHTML=error ;
+
+    }
+
+    function validateForm()
+    {
+        var returnval=true;
+     var name=document.forms['myForm']["fname"].value;
+     if(name.length < 5)
+     {
+        seterror("name" , "  *Length of name is too short ");
+        returnval =false;
+
+     }
+     
+      var email=document.forms['myForm']["femail"].value;
+        
+      if(email.length > 15)
+      {
+        seterror("email","*Email cannot be more than 15 characters ")
+        returnval= false;
+      }
+      
+      var phone=document.forms['myForm']["fphone"].value;
+
+      if(phone.length >10 || phone.length < 10)
+      {
+        seterror("phone","*INvalid number");
+        returnval=false;
+      }
+
+      var password=document.forms['myForm']["fpass"].value;
+      if(password.length < 6)
+      {
+        seterror("pass" , " *password should be more than 6  ");
+        returnval=false;
+      }
+      var conpass=document.forms['myForm']["fcpass"].value;
+      if(conpass != password)
+      {
+        seterror("cpass" , " *passwords Are not  same  ");
+        returnval=false;
+      }
+      
+      
+
+     return returnval;
+    }
+</script>
+
+</html>
+
+
+-------------------------------------------------------------------------------------------------------
+
+
+
+
+
+-----Backend-----
+-----app.js---
+var express= require("express");
+var app= express();
+var routes= require("./routes/router")
+
+var path = require("path");
+var mongoose= require("mongoose");
+var bodyparser=require("body-parser");
+var cors= require("cors");
+
+mongoose.promise=global.promise;
+const url= "mongodb://0.0.0.0:27017/emp";
+mongoose.connect(url,{connectTimeoutMS:1000},function(err,resp){
+    if(err){
+        console.log("conncetion not estb");
+        console.log(err);
+    }
+    else{
+        console.log("conncetion established");
+    }
+
+
+
+})
+
+app.use(bodyparser.json());
+app.use(bodyparser.urlencoded({extended:false}));
+app.use(express.static(path.join(__dirname,"public")));//optional
+app.use(cors('*'));
+app.use("/",routes);
+
+app.listen(3000);
+console.log("server is listening at 3000");
+
+module.exports=app;
+
+
+
+--------------------Router.js--------------------
+var express=require("express");
+ var mongoose= require("mongoose");
+
+ const{modelname}= require ("mongoose");
+ var router = express.Router();
+
+ var schema=mongoose.Schema;
+
+ var empschema= new schema({
+     id:String,name:String,Salary:String
+ })
+
+ var Emp= mongoose.model('emp',empschema,'emp');
+
+ router.get("/login",function(req,resp){
+     Emp.find().exec(function(err,data){
+         if(err){
+             resp.status(500).send("data not found");
+         }else{
+             console.log(data);
+             resp.send(data);
+         }
+     })
+ })
+
+ router.post("/login/:id",function(req,resp){
+    Emp.findOne({id:req.body.id},function(err,data){
+        if(err){
+            console.log("data not found");
+            resp.status(500).send("wrong id");
+        }else{
+            if(data.name===req.body.name){
+            resp.send("OKAY");
+        }
+
+        }
+    })
+ })
+
+ module.exports=router;
+
+
+------------------------Frontend(React)-------------------------
+--app.js---
+import logo from './logo.svg';
+import {BrowserRouter as Router,Route} from 'react-router-dom';
+import {Switch} from 'react-router-dom';
+import './App.css';
+import Login from './component/Login';
+import Home from './component/Home'
+function App() {
+  return (
+    <div>
+      <Router>
+        <Switch>
+      <Route path="/" component= {Login}></Route>
+      <Route path="/successful" component={Home}></Route>
+   
+    </Switch>
+    </Router>
+    </div>
+    
+  );
+}
+
+export default App;
+
+
+----component-----
+---Home.js----
+const Home=()=>{
+    return(
+        <div>Login Successful</div>
+    )
+}
+export default Home;
+----Login.js---
+import {useState} from 'react';
+import LoginServices from './LoginServices';
+import {useHistory} from 'react-router-dom';
+const Login= ()=>{
+    let[mngob,setmngob]=useState({id:"",name:""});
+    let History= useHistory();
+    const handleChange=(event)=>{
+        const {name,value}=event.target;
+        setmngob({...mngob,[name]:value});
+    }
+    const display=()=>{
+        LoginServices.getLogin(mngob).then((result)=>{
+            alert(result.data);
+            if(result.data==="OKAY"){
+                history.push("/successful");
+            }
+        }).catch(()=>{alert("invalid name")})
+    }
+    return(
+    <div>
+        
+            <form>
+                
+                    Id:<input typr="text" name="id" id="id" value="mngob.id" onChange={handleChange}></input>
+                  
+                    Name:<input type="text" name="name" id="name" value="mngob.name" onChange={handleChange}></input>
+                    <button tyep="button" name="btn" id="btn" onClick={display}>Click Me</button>
+            </form>
+        
+    </div>
+    
+   
+    );
+
+}
+export default Login;
+
+------loginServices------
+import axios from 'axios';
+
+class LoginServices{
+    constructor(){
+        this.baseUrl="http://localhost:3000/";
+
+
+    }
+    getLogin(mng){
+        return axios.post(this.baseUrl+"login/"+mng.id,mng);
+    }
+}
+
+export default new LoginServices;
